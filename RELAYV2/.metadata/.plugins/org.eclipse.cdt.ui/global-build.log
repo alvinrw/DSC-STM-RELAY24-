@@ -1,0 +1,68 @@
+14:31:12 **** Incremental Build of configuration Debug for project ROME_DSC1 ****
+make -j12 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m3 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F103xB -c -I../Core/Inc -I../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I../Drivers/STM32F1xx_HAL_Driver/Inc -I../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfloat-abi=soft -mthumb -o "Core/Src/main.o"
+arm-none-eabi-g++ -o "ROME_DSC1.elf" @"objects.list"   -mcpu=cortex-m3 -T"C:\Users\alvin\Documents\Coolyeah\pkl\Kode_masudin\ROME_DSC1\ROME_DSC1\STM32F103C8TX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ROME_DSC1.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -lstdc++ -lsupc++ -Wl,--end-group
+Finished building target: ROME_DSC1.elf
+ 
+arm-none-eabi-size  ROME_DSC1.elf 
+arm-none-eabi-objdump -h -S ROME_DSC1.elf  > "ROME_DSC1.list"
+arm-none-eabi-objcopy  -O ihex ROME_DSC1.elf  "ROME_DSC1.hex"
+   text	   data	    bss	    dec	    hex	filename
+  20692	    100	   3228	  24020	   5dd4	ROME_DSC1.elf
+Finished building: default.size.stdout
+ 
+Finished building: ROME_DSC1.hex
+ 
+Finished building: ROME_DSC1.list
+ 
+08:40:27 **** Incremental Build of configuration Debug for project RELAY ****
+make -j12 all 
+arm-none-eabi-size  RELAY.elf 
+   text	   data	    bss	    dec	    hex	filename
+  14280	     12	   2252	  16544	   40a0	RELAY.elf
+Finished building: default.size.stdout
+ 
+08:54:10 **** Incremental Build of configuration Debug for project RELAY ****
+make -j12 all 
+arm-none-eabi-gcc "../Core/Src/DI.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F407xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/DI.d" -MT"Core/Src/DI.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/DI.o"
+../Core/Src/DI.c: In function 'Value_Discrete':
+../Core/Src/DI.c:61:10: error: 'ccccc' undeclared (first use in this function)
+   61 |         }ccccc
+      |          ^~~~~
+../Core/Src/DI.c:61:10: note: each undeclared identifier is reported only once for each function it appears in
+../Core/Src/DI.c:61:15: error: expected ';' before 'if'
+   61 |         }ccccc
+      |               ^
+      |               ;
+   62 | 
+   63 |         if(HAL_GetTick() - last_tx1 >= 300)
+      |         ~~     
+../Core/Src/DI.c:39:17: warning: variable 'value_PB15' set but not used [-Wunused-but-set-variable]
+   39 |         uint8_t value_PB15;
+      |                 ^~~~~~~~~~
+../Core/Src/DI.c:37:25: warning: unused variable 'last_tx1' [-Wunused-variable]
+   37 |         static uint32_t last_tx1 = 0;
+      |                         ^~~~~~~~
+make: *** [Core/Src/subdir.mk:43: Core/Src/DI.o] Error 1
+"make -j12 all" terminated with exit code 2. Build might be incomplete.
+08:55:01 **** Incremental Build of configuration Debug for project RELAY ****
+make -j12 all 
+arm-none-eabi-gcc "../Core/Src/DI.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F407xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/DI.d" -MT"Core/Src/DI.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/DI.o"
+../Core/Src/DI.c: In function 'Value_Discrete':
+../Core/Src/DI.c:39:17: warning: variable 'value_PB15' set but not used [-Wunused-but-set-variable]
+   39 |         uint8_t value_PB15;
+      |                 ^~~~~~~~~~
+arm-none-eabi-g++ -o "RELAY.elf" @"objects.list"   -mcpu=cortex-m4 -T"C:\Users\alvin\Documents\Coolyeah\pkl\Kode_masudin\RELAYV2\RELAY\STM32F407VGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="RELAY.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -lstdc++ -lsupc++ -Wl,--end-group
+Finished building target: RELAY.elf
+ 
+arm-none-eabi-size  RELAY.elf 
+arm-none-eabi-objdump -h -S RELAY.elf  > "RELAY.list"
+arm-none-eabi-objcopy  -O ihex RELAY.elf  "RELAY.hex"
+   text	   data	    bss	    dec	    hex	filename
+  14132	     12	   2252	  16396	   400c	RELAY.elf
+Finished building: default.size.stdout
+ 
+Finished building: RELAY.hex
+ 
+Finished building: RELAY.list
+ 

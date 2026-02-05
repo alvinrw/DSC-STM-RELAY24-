@@ -1,0 +1,258 @@
+#include "raspi.h"
+#include "relay.h"
+#include <string.h>
+#include <stdio.h>
+
+#define RX_BUF_SIZE 16
+#define TIMEOUT_THRESHOLD 50000  // Timeout untuk deteksi stuck state
+#define PACKET_VALIDATE_INTERVAL 50000  // Validasi state setiap 50k loops
+
+uint8_t rx_buffer[RX_BUF_SIZE];
+uint8_t rx_byte;
+uint8_t payload[RX_BUF_SIZE];
+
+// CRITICAL: These are accessed from both interrupt and main loop!
+volatile uint8_t rx_index = 0;
+volatile uint8_t idx_payload = 0;
+volatile uint8_t rx_ready = 0;
+
+uint8_t discreate_A[8];
+uint8_t discreate_B[8];
+uint8_t discreate_C[8];
+
+char* country_code;
+char* navigation_source;
+
+// Safety: timeout counter to detect stuck states
+static uint32_t no_data_counter = 0;
+static uint32_t packet_counter = 0;
+
+extern UART_HandleTypeDef huart1;
+extern UART_HandleTypeDef huart2;
+extern UART_HandleTypeDef huart3;
+
+// ✅ FIX: Added packet type tracking
+typedef enum {
+    PKT_NONE = 0,
+    PKT_DATA,    // 0xA5 0x99
+    PKT_STATUS   // 0x99 0xA5
+} PacketType_t;
+
+static PacketType_t current_packet_type = PKT_NONE;
+
+// Reset UART state - call this on init or error
+void Reset_UART_State(void){
+    rx_index = 0;
+    idx_payload = 0;
+    rx_ready = 0;
+    current_packet_type = PKT_NONE;
+    memset(rx_buffer, 0, RX_BUF_SIZE);
+    memset(payload, 0, RX_BUF_SIZE);
+    no_data_counter = 0;
+}
+
+void Raspi_UART_Start(void)
+{
+    // Polling mode - no interrupt setup needed
+    // Just reset the state
+    Reset_UART_State();
+}
+
+void Rome_UART_Start(void)
+{
+    // UART2 is TX-only for ROME devices, no RX needed!
+    // No interrupt setup required
+}
+
+void Nano_UART_Start(void)
+{
+    // UART3 for NANO - no interrupt needed for now
+}
+
+void Send_NANO(uint8_t header, uint8_t ID, uint8_t data, uint8_t data1){
+    uint8_t send_nano[4];
+
+    send_nano[0] = header;
+    send_nano[1] = ID;
+    send_nano[2] = data;
+    send_nano[3] = data1;
+    HAL_UART_Transmit(&huart3, (uint8_t*)send_nano, 4, HAL_MAX_DELAY);
+}
+
+void Send_ROME(uint8_t id_device, uint8_t data1, uint8_t data2){
+    uint8_t send_rome[4];
+
+    // 4-byte protocol: 0xBB ID MSB LSB
+    send_rome[0] = 0xBB;  // Start marker
+    send_rome[1] = id_device;
+    send_rome[2] = data1;
+    send_rome[3] = data2;
+    // OPTIMIZED: Reduced timeout from 5ms to 2ms for faster transmission
+    HAL_UART_Transmit(&huart2, (uint8_t*)send_rome, 4, 2);
+}
+
+void Send_RASPI(uint8_t id_device, uint8_t data1, uint8_t data2){
+    uint8_t send_raspi[3];
+
+    send_raspi[0] = id_device;
+    send_raspi[1] = data1;
+    send_raspi[2] = data2;
+    // FIXED: Use UART1 for Raspberry Pi, not UART2!
+    HAL_UART_Transmit(&huart1, (uint8_t*)send_raspi, 3, 5);
+}
+
+void Tx_Raspy(void){
+    // POLLING MODE: Read UART1 directly
+    uint8_t temp_byte;
+
+    // ✅ SAFETY: Check for timeout/stuck state
+    if(no_data_counter > TIMEOUT_THRESHOLD){
+        // Stuck detected! Force reset
+        Reset_UART_State();
+
+        // Try to recover UART
+        __HAL_UART_CLEAR_OREFLAG(&huart1);
+        __HAL_UART_CLEAR_NEFLAG(&huart1);
+        __HAL_UART_CLEAR_FEFLAG(&huart1);
+        return;  // ✅ FIX: Exit early after reset
+    }
+
+    // ✅ SAFETY: Periodic state validation
+    if(packet_counter > PACKET_VALIDATE_INTERVAL){
+        packet_counter = 0;
+        // Validate state consistency
+        if(rx_index > RX_BUF_SIZE || idx_payload > RX_BUF_SIZE){
+            Reset_UART_State();
+            return;  // ✅ FIX: Exit early after reset
+        }
+    }
+    packet_counter++;
+
+    // Check if data available
+    if(HAL_UART_Receive(&huart1, &temp_byte, 1, 0) == HAL_OK){
+        // Got data! Reset timeout counter
+        no_data_counter = 0;
+
+        // ✅ SAFETY: Bounds check before any array access
+        if(rx_index >= RX_BUF_SIZE || idx_payload >= RX_BUF_SIZE){
+            Reset_UART_State();
+            return;
+        }
+
+        // ========== STATE MACHINE ==========
+        if(rx_index == 0){
+            // ✅ FIX: First byte of header
+            rx_buffer[0] = temp_byte;
+            rx_index = 1;
+        }
+        else if(rx_index == 1){
+            // ✅ FIX: Second byte of header - validate immediately
+            rx_buffer[1] = temp_byte;
+
+            // Determine packet type
+            if(rx_buffer[0] == 0x99 && rx_buffer[1] == 0xA5){
+                // Status packet: [0x99 0xA5 value] - only 1 byte payload
+                current_packet_type = PKT_STATUS;
+                idx_payload = 0;
+                rx_index = 2;
+            }
+            else if(rx_buffer[0] == 0xA5 && rx_buffer[1] == 0x99){
+                // Data packet: [0xA5 0x99 + 13 bytes]
+                current_packet_type = PKT_DATA;
+                idx_payload = 0;
+                rx_index = 2;
+            }
+            else {
+                // ✅ FIX: Invalid header - reset immediately
+                Reset_UART_State();
+            }
+        }
+        else if(rx_index >= 2){
+            // ✅ FIX: Receiving payload based on packet type
+            if(current_packet_type == PKT_STATUS){
+                // Status packet expects only 1 byte
+                payload[0] = temp_byte;
+                idx_payload = 1;
+                rx_ready = 1;  // Packet complete!
+            }
+            else if(current_packet_type == PKT_DATA){
+                // Data packet expects 13 bytes
+                if(idx_payload < 13){
+                    payload[idx_payload++] = temp_byte;
+                    if(idx_payload >= 13){
+                        rx_ready = 1;  // Packet complete!
+                    }
+                }
+                else {
+                    // ✅ FIX: Overflow protection
+                    Reset_UART_State();
+                }
+            }
+            else {
+                // ✅ FIX: Unknown packet type - should never happen
+                Reset_UART_State();
+            }
+        }
+    }
+    else {
+        // No data received, increment timeout counter
+        no_data_counter++;
+    }
+
+    // ========== PROCESS COMPLETE PACKET ==========
+    if(rx_ready){
+        // ✅ FIX: Clear flag FIRST to prevent re-entry
+        rx_ready = 0;
+
+        if(current_packet_type == PKT_DATA){
+            // ✅ Data packet: [0xA5 0x99 + 13 bytes]
+            // Parse discrete data
+            for(int i = 0; i < 8; i++){
+                discreate_A[i] = (payload[0] >> i) & 0x01;
+                discreate_B[i] = (payload[1] >> i) & 0x01;
+                discreate_C[i] = (payload[2] >> i) & 0x01;
+            }
+
+            // CRITICAL: Send to ROME devices FAST
+            // This is the bottleneck - 5 UART transmits!
+            for(int i = 0; i < 5; i++){
+                Send_ROME(i+1, payload[3+(i*2)], payload[4+(i*2)]);
+            }
+
+            // ✅ OPTIONAL: Country code and nav source parsing
+            // Uncomment if needed:
+            /*
+            // Country code (payload[13], 4 bits)
+            uint8_t cc = payload[13] & 0x0F;
+            if(cc == 0x01) country_code = "JP";
+            else if(cc == 0x02) country_code = "EU";
+            else if(cc == 0x03) country_code = "US";
+            else country_code = "Unknown";
+
+            // Navigation source (payload[13], upper 4 bits)
+            uint8_t nav = (payload[13] >> 4) & 0x0F;
+            if(nav == 0x01) navigation_source = "GPS";
+            else if(nav == 0x02) navigation_source = "GLONASS";
+            else navigation_source = "Unknown";
+            */
+        }
+        else if(current_packet_type == PKT_STATUS){
+            // ✅ FIX: Status packet handling restored!
+            // Status packet: [0x99 0xA5 value]
+            uint8_t status_value = payload[0];
+
+            // ✅ TODO: Add your status handling logic here
+            // Example:
+            // - Update system state
+            // - Log status
+            // - Trigger actions based on status
+            (void)status_value;  // Suppress unused warning
+        }
+
+        // ✅ CRITICAL FIX: Always reset state after processing ANY packet
+        // This prevents state corruption for next packet
+        Reset_UART_State();
+    }
+}
+
+// POLLING MODE - No interrupt callbacks needed!
