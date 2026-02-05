@@ -1,32 +1,29 @@
 #include "DI.h"
 #include "raspi.h"
 
-// KONFIGURASI MODE & PIN
-#define MODE_AUTO   1
-#define MODE_BUTTON 0
+// KONFIGURASI MODE
+#define MODE_AUTO   1   // Kirim 01 terus menerus (Simulasi)
+#define MODE_BUTTON 0   // Baca Pin Asli (Manual)
 
-// Pilih Mode Disini: MODE_AUTO atau MODE_BUTTON
-#define CURRENT_MODE  MODE_AUTO
-
-// Pilih Pin untuk Bit 0 (Data 01)
-#define PIN_RASPY     GPIO_PIN_15
+// PILIH MODE DISINI: mode_auto	 dan mode_button
+#define CURRENT_MODE  MODE_BUTTON
 
 uint8_t Read_Discrete(void)
 {
     uint8_t val = 0;
 
 #if CURRENT_MODE == MODE_AUTO
-    val = 0x01; // Simulasi: Paksa kirim 01 (PB15 dianggap aktif)
+    val = 0x01; // Simulasi: Paksa kirim 01 (Seolah-olah PB15 aktif)
 #else
-    // Mode Button: Baca Pin Asli
-    // Bit 0 sekarang membaca dari PIN_RASPY (PB15)
-    val |= (HAL_GPIO_ReadPin(GPIOB, PIN_RASPY) == GPIO_PIN_SET) << 0;
+    // Mode Button: Logic disamakan dengan RELAY Masudin
+    // Bit 0 = PB13
+    val |= (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_13) == GPIO_PIN_SET) << 0;
     
-    // Bit 1 tetap PB14
+    // Bit 1 = PB14
     val |= (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_14) == GPIO_PIN_SET) << 1;
     
-    // Bit 2 sekarang baca PB13 (tukar posisi dengan PB15 yang lama)
-    val |= (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_13) == GPIO_PIN_SET) << 2;
+    // Bit 2 = PB15 (Ini yang akan mentrigger pengiriman data 01)
+    val |= (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_15) == GPIO_PIN_SET) << 2;
 #endif
 
     return val;
@@ -45,8 +42,8 @@ void Value_Discrete(void){
 		// PB14 aktif
 	}
 	// PB15 aktif
-	if(val & (1 << 2))value_PB15 = 0x01;
-	else value_PB15 = 0x00;
+	if(val & (1 << 2))value_PB15 = 0x00;
+	else value_PB15 = 0x01;
 
 	if(HAL_GetTick() - last_tx >= 5)  // 5ms interval (200 Hz) - RESTORED
 	{
@@ -56,8 +53,8 @@ void Value_Discrete(void){
 	    HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
 	    
 	    // Safe to use high frequency now (Non-blocking IT mode)
-	    // FIX: Send actual 'val' instead of hardcoded 0x01
-	    Send_RASPI(0x99,0xA5,val);
+	    // FIX: Send value_PB15 (Like Masudin) instead of raw val
+	    Send_RASPI(0x99,0xA5,value_PB15);
 	}
 
 	if(HAL_GetTick() - last_tx1 >= 300)

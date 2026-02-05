@@ -10,9 +10,6 @@ Fitur:
 - Otomatis handle encoding khusus Device 5 (EHSI Relative)
 
 Protocol Output: [0xBB, ID, MSB, LSB]
-
-Author: Antigravity AI Assistant
-Date: 2026-02-02
 """
 
 import serial
@@ -29,7 +26,7 @@ def get_valid_float(prompt):
         try:
             return float(input(prompt))
         except ValueError:
-            print("❌ Input tidak valid. Masukkan angka.")
+            print("Input tidak valid. Masukkan angka.")
 
 def calculate_raw_data(device_id, angle):
     """
@@ -66,9 +63,9 @@ def main():
     
     try:
         ser = serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=1)
-        print(f"✅ Connected to {SERIAL_PORT}")
+        print(f"Connected to {SERIAL_PORT}")
     except Exception as e:
-        print(f"❌ Connection Failed: {e}")
+        print(f"Connection Failed: {e}")
         return
 
     try:
@@ -86,11 +83,11 @@ def main():
                 else:
                     device_id = int(dev_input)
             except:
-                print("❌ Invalid Device ID")
+                print("Invalid Device ID")
                 continue
 
             # 2. Loop Input Sudut (Continuous)
-            print(f"✅ Mode: Mengendalikan Device {device_id}")
+            print(f"Mode: Mengendalikan Device {device_id}")
             print("   Available Commands:")
             print("   [Number] : Set Angle (e.g. 120.5)")
             print("   'a'      : Auto Rotate (Animation)")
@@ -104,7 +101,7 @@ def main():
                 
                 # === COMMAND: CALIBRATION MODE ===
                 if user_val.lower() == 'c':
-                    print("\n🔧 --- CALIBRATION MODE ---")
+                    print("\n--- CALIBRATION MODE ---")
                     print("1. Putar jarum sampai menunjuk angka 0 (Zero Physical Position).")
                     print("2. Gunakan: 'w/s' (+/- 10), 'd/a' (+/- 1), 'e/q' (+/- 0.1)")
                     print("3. Tekan ENTER jika jarum sudah pas di 0.")
@@ -117,7 +114,7 @@ def main():
                         lsb = raw_data & 0xFF
                         ser.write(bytearray([0xBB, device_id, msb, lsb]))
                         
-                        print(f"\r🎯 Calib Angle: {calib_angle:.1f}° | Raw Sent: {raw_data} (0x{raw_data:04X})  ", end="")
+                        print(f"\rCalib Angle: {calib_angle:.1f}deg | Raw Sent: {raw_data} (0x{raw_data:04X})  ", end="")
                         
                         # Input Kontrol
                         key = input() # Tunggu enter
@@ -134,7 +131,7 @@ def main():
                         if calib_angle >= 360.0: calib_angle -= 360.0
                         if calib_angle < 0.0: calib_angle += 360.0
                     
-                    print(f"\n\n✅ CALIBRATION DONE!")
+                    print(f"\n\nCALIBRATION DONE!")
                     print(f"Saat ini Raw Data = 0x{raw_data:04X}")
                     
                     # Hitung Offset
@@ -144,7 +141,7 @@ def main():
                     
                     offset_needed = (65536 - raw_data) & 0xFFFF
                     print("-" * 40)
-                    print(f"📣 COPY KODE INI KE main.c:")
+                    print(f"COPY KODE INI KE main.c:")
                     print(f"#define DSC_ZERO_OFFSET   0x{offset_needed:04X}")
                     print("-" * 40)
                     print("Setelah update main.c, re-upload codingnya.\n")
@@ -152,7 +149,7 @@ def main():
 
                 # === COMMAND: AUTO ROTATE ===
                 if user_val.lower() == 'a':
-                    print("\n🔄 --- AUTO ROTATE MODE ---")
+                    print("\n--- AUTO ROTATE MODE ---")
                     try:
                         inc_str = input("Masukkan Increment (Default 5.0) : ")
                         step = float(inc_str) if inc_str.strip() else 5.0
@@ -160,8 +157,8 @@ def main():
                         dly_str = input("Masukkan Delay detik (Default 0.05) : ")
                         delay = float(dly_str) if dly_str.strip() else 0.05
                         
-                        print(f"🚀 Muter mode ON! (Step: {step}, Delay: {delay}s)")
-                        print("⏹️  Tekan CTRL+C untuk stop dan kembali ke menu.\n")
+                        print(f"Muter mode ON! (Step: {step}, Delay: {delay}s)")
+                        print("Tekan CTRL+C untuk stop dan kembali ke menu.\n")
                         
                         curr_angle = 0.0
                         while True:
@@ -173,8 +170,8 @@ def main():
                             ser.write(packet)
                             
                             # 2. Print Status (Overwrite line for clean look via \r, or simple print)
-                            # print(f"\r⏳ Sudut: {curr_angle:>6.1f}° | Raw: {raw_data:>5}", end="", flush=True)
-                            print(f"⏳ Auto: {curr_angle:.1f}° -> Raw: {raw_data}")
+                            # print(f"\rSudut: {curr_angle:>6.1f}deg | Raw: {raw_data:>5}", end="", flush=True)
+                            print(f"Auto: {curr_angle:.1f}deg -> Raw: {raw_data}")
 
                             # 3. Increment
                             curr_angle += step
@@ -184,10 +181,10 @@ def main():
                             time.sleep(delay)
 
                     except KeyboardInterrupt:
-                        print("\n\n⏹️  Auto Rotate Stopped. Kembali ke manual.")
+                        print("\n\nAuto Rotate Stopped. Kembali ke manual.")
                         continue # Back to inner loop
                     except ValueError:
-                        print("❌ Input tidak valid.")
+                        print("Input tidak valid.")
                         continue
 
                 # === COMMAND: BACK / QUIT ===
@@ -202,7 +199,7 @@ def main():
                 except ValueError:
                     # If not a command and not a number, skip
                     if user_val.strip() != "":
-                        print("❌ Masukkan angka atau command 'a'/'b'/'c'/'q'")
+                        print("Masukkan angka atau command 'a'/'b'/'c'/'q'")
                     continue
                 
                 # 3. Hitung Raw Data
@@ -216,7 +213,7 @@ def main():
                 packet = bytearray([0xBB, device_id, msb, lsb])
                 ser.write(packet)
                 
-                print(f"   📤 SENT: [BB {device_id:02X} {msb:02X} {lsb:02X}] -> Raw: {raw_data} (Angle: {target_angle})")
+                print(f"   SENT: [BB {device_id:02X} {msb:02X} {lsb:02X}] -> Raw: {raw_data} (Angle: {target_angle})")
 
     except KeyboardInterrupt:
         print("\nSee ya!")

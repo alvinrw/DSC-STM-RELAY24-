@@ -6,9 +6,6 @@ dengan detail bit mapping untuk setiap mode (EADI, EHSI, RDU)
 
 Port: COM yang terhubung ke RELAYV2 PA10 (RX) untuk sniff data
 Baud: 115200
-
-Author: Antigravity AI Assistant
-Date: 2026-01-30
 """
 
 import serial
@@ -16,7 +13,7 @@ import time
 from datetime import datetime
 
 # ===== CONFIGURATION =====
-SERIAL_PORT = 'COM14'  # Port untuk sniff data Raspy → RELAYV2
+SERIAL_PORT = 'COM14'  # Port untuk sniff data Raspy -> RELAYV2
 BAUD_RATE = 115200
 TIMEOUT = 1  # seconds
 DISPLAY_INTERVAL = 5  # Display every N seconds (ubah sesuai kebutuhan!)
@@ -179,7 +176,7 @@ def main():
     try:
         # Open serial port
         ser = serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=TIMEOUT)
-        print(f"✅ Connected to {SERIAL_PORT} at {BAUD_RATE} baud\n")
+        print(f"Connected to {SERIAL_PORT} at {BAUD_RATE} baud\n")
         
         # Flush input buffer
         ser.reset_input_buffer()
@@ -251,7 +248,7 @@ def main():
             time.sleep(0.001)
     
     except serial.SerialException as e:
-        print(f"\n❌ Serial Error: {e}")
+        print(f"\nSerial Error: {e}")
         print(f"\nTroubleshooting:")
         print(f"  1. Check if port {SERIAL_PORT} is correct")
         print(f"  2. Check if port is not used by another program")
@@ -259,13 +256,13 @@ def main():
         return
     
     except KeyboardInterrupt:
-        print(f"\n\n⏹️  Monitoring stopped by user")
+        print(f"\n\nMonitoring stopped by user")
         print(f"\nTotal packets decoded: {packet_count}")
     
     finally:
         if 'ser' in locals() and ser.is_open:
             ser.close()
-            print(f"\n✅ Serial port {SERIAL_PORT} closed")
+            print(f"\nSerial port {SERIAL_PORT} closed")
 
 if __name__ == "__main__":
     main()

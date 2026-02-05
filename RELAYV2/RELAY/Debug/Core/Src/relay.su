@@ -1,5 +1,5 @@
 ../Core/Src/relay.c:5:6:Relay_GPIO_Init	40	static
 ../Core/Src/relay.c:30:6:Relay_Update	40	static
-../Core/Src/relay.c:52:6:Relay_Off	16	static
-../Core/Src/relay.c:58:6:Relay_On	16	static
-../Core/Src/relay.c:65:6:Relay_Test_All	16	static
+../Core/Src/relay.c:58:6:Relay_Off	16	static
+../Core/Src/relay.c:64:6:Relay_On	16	static
+../Core/Src/relay.c:71:6:Relay_Test_All	16	static

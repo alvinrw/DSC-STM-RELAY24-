@@ -29,6 +29,12 @@ void Relay_GPIO_Init(void)
 
 void Relay_Update(uint32_t relay_mask)
 {
+    // FIX: Invert Logic untuk Active High (1=ON, 0=OFF)
+    // Karena Hardware Relay Active Low, maka:
+    // Input 1 (ON)  -> Harus jadi Output 0 (LOW)
+    // Input 0 (OFF) -> Harus jadi Output 1 (HIGH)
+    relay_mask = ~relay_mask; 
+
     uint32_t pc_set, pc_reset;
     uint32_t pd_set, pd_reset;
     uint32_t pa_set, pa_reset;

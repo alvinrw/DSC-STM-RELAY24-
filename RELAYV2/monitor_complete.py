@@ -1,27 +1,12 @@
-"""
-RELAYV2 Complete Data Monitor - All-in-One
-===========================================
-Monitor SEMUA data dari Raspberry Pi → RELAYV2:
-- Discrete A, B, C (decoded)
-- ROME Device 1-5 (angles)
-- Display interval bisa diatur
-
-Port: COM yang terhubung ke RELAYV2 PA10 (RX) untuk sniff data
-Baud: 115200
-
-Author: Antigravity AI Assistant
-Date: 2026-01-30
-"""
-
 import serial
 import time
 from datetime import datetime
 
 # ===== CONFIGURATION =====
-SERIAL_PORT = 'COM14'  # Port untuk sniff data Raspy → RELAYV2
+SERIAL_PORT = 'COM14'  # Port untuk sniff data Raspy -> RELAYV2
 BAUD_RATE = 115200
 TIMEOUT = 1  # seconds
-DISPLAY_INTERVAL = 10  # ⭐ Display every N seconds (UBAH DI SINI!)
+DISPLAY_INTERVAL = 10  # Display every N seconds (UBAH DI SINI!)
 
 # ===== STATISTICS =====
 packet_count = 0
@@ -34,7 +19,7 @@ def print_header():
     print("=" * 100)
     print(f"Port: {SERIAL_PORT}")
     print(f"Baud Rate: {BAUD_RATE}")
-    print(f"⭐ Display Interval: {DISPLAY_INTERVAL} seconds (edit DISPLAY_INTERVAL di line 20)")
+    print(f"Display Interval: {DISPLAY_INTERVAL} seconds (edit DISPLAY_INTERVAL di line 20)")
     print("=" * 100)
     print("\nPress Ctrl+C to stop monitoring...\n")
 
@@ -65,11 +50,11 @@ def display_data(data):
     timestamp = data['timestamp']
     
     print("\n" + "=" * 100)
-    print(f"📊 DATA SNAPSHOT @ {timestamp}")
+    print(f"DATA SNAPSHOT @ {timestamp}")
     print("=" * 100)
     
     # Discrete Data
-    print(f"\n🔢 DISCRETE DATA:")
+    print(f"\nDISCRETE DATA:")
     print(f"   Mode:         {data['mode']}")
     print(f"   Nav Source:   {data['nav_source']}")
     print(f"   Country:      {data['country']}")
@@ -79,7 +64,7 @@ def display_data(data):
     print(f"   Discrete C:   0x{data['discrete_c']:02X} (binary: {data['discrete_c']:08b})")
     
     # ROME Devices
-    print(f"\n🎯 ROME DEVICES (Angles):")
+    print(f"\nROME DEVICES (Angles):")
     for i in range(5):
         dev_id = i + 1
         raw_value = data[f'rome_{dev_id}_raw']
@@ -87,7 +72,7 @@ def display_data(data):
         print(f"   Device {dev_id}:    {raw_value:5d} = {angle:7.1f}°")
     
     # Statistics
-    print(f"\n📈 STATISTICS:")
+    print(f"\nSTATISTICS:")
     print(f"   Total Packets:     {total_packets:,}")
     print(f"   Packets/sec:       {data['rate']:.1f} Hz")
     print(f"   Next update in:    {DISPLAY_INTERVAL} seconds")
@@ -101,7 +86,7 @@ def main():
     try:
         # Open serial port
         ser = serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=TIMEOUT)
-        print(f"✅ Connected to {SERIAL_PORT} at {BAUD_RATE} baud\n")
+        print(f"Connected to {SERIAL_PORT} at {BAUD_RATE} baud\n")
         print("Waiting for data...\n")
         
         # Flush input buffer
@@ -199,7 +184,7 @@ def main():
             time.sleep(0.001)
     
     except serial.SerialException as e:
-        print(f"\n❌ Serial Error: {e}")
+        print(f"\nSerial Error: {e}")
         print(f"\nTroubleshooting:")
         print(f"  1. Check if port {SERIAL_PORT} is correct")
         print(f"  2. Check if port is not used by another program")
@@ -207,14 +192,14 @@ def main():
         return
     
     except KeyboardInterrupt:
-        print(f"\n\n⏹️  Monitoring stopped by user")
-        print(f"\n📊 Final Statistics:")
+        print(f"\n\nMonitoring stopped by user")
+        print(f"\nFinal Statistics:")
         print(f"   Total packets decoded: {total_packets:,}")
     
     finally:
         if 'ser' in locals() and ser.is_open:
             ser.close()
-            print(f"\n✅ Serial port {SERIAL_PORT} closed")
+            print(f"\nSerial port {SERIAL_PORT} closed")
 
 if __name__ == "__main__":
     main()
